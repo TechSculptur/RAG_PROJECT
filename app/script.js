@@ -1,4 +1,4 @@
-const API_URL = "";
+const API_URL = "https://rag-document-assistant-sfs0.onrender.com";
 
 let chatHistory = [];
 
