@@ -1,4 +1,4 @@
-const API_URL = "http://127.0.0.1:8000";
+const API_URL = "";
 
 // Stores conversation history for the current browser session
 let chatHistory = [];
