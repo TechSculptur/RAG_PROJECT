@@ -1,6 +1,5 @@
 const API_URL = "";
 
-// Stores conversation history for the current browser session
 let chatHistory = [];
 
 const chatBox = document.getElementById("chat-box");
@@ -90,19 +89,11 @@ async function sendQuery() {
 
 
         const data = await response.json();
-
-
-        // Remove loading message
         document.getElementById(loadingId)?.remove();
 
 
         if (response.ok) {
-
-            // Display AI response
             addMessage(data.answer, "ai");
-
-
-            // Store this conversation in history
             chatHistory.push({
                 role: "user",
                 content: question
@@ -137,17 +128,10 @@ async function sendQuery() {
 
 }
 
-
-/*
-    PDF UPLOAD
-*/
-
 uploadBtn.addEventListener("click", async () => {
 
     const file = pdfInput.files[0];
 
-
-    // Check whether a file was selected
     if (!file) {
 
         ingestStatus.textContent =
@@ -156,8 +140,6 @@ uploadBtn.addEventListener("click", async () => {
         return;
     }
 
-
-    // Check file type
     if (!file.name.toLowerCase().endsWith(".pdf")) {
 
         ingestStatus.textContent =
@@ -174,13 +156,8 @@ uploadBtn.addEventListener("click", async () => {
 
     ingestStatus.style.color =
         "var(--text-muted)";
-
-
-    // Create multipart form data
     const formData = new FormData();
-
     formData.append("file", file);
-
 
     try {
 
@@ -203,9 +180,6 @@ uploadBtn.addEventListener("click", async () => {
 
             ingestStatus.style.color =
                 "#00b894";
-
-
-            // Clear selected file
             pdfInput.value = "";
 
 
@@ -235,17 +209,7 @@ uploadBtn.addEventListener("click", async () => {
 
 });
 
-
-/*
-    SEND BUTTON
-*/
-
 sendBtn.addEventListener("click", sendQuery);
-
-
-/*
-    ENTER KEY
-*/
 
 userInput.addEventListener("keypress", (e) => {
 
