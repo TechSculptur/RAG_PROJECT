@@ -1,18 +1,23 @@
 from dotenv import load_dotenv
 from langchain_core.prompts import ChatPromptTemplate,MessagesPlaceholder
 from langchain_groq import ChatGroq
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_chroma import Chroma
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnableLambda,RunnableParallel,RunnablePassthrough
 load_dotenv()
-
+import os
 def format_docs(results):
     docList = [doc.page_content for doc in results]
     return '\n\n'.join(docList)
 
 # Note: Using OpenAI's open-weight GPT-OSS 120B model via Groq!
 llm = ChatGroq(model='openai/gpt-oss-120b')
+
+embeddings = GoogleGenerativeAIEmbeddings(
+    model="models/gemini-embedding-001",
+    google_api_key=os.getenv("GOOGLE_API_KEY"),
+)
 
 contextualize_prompt = (
 
@@ -50,11 +55,6 @@ prompt = ChatPromptTemplate.from_messages(
             "{question}"
         )
     ]
-)
-embeddings = HuggingFaceEmbeddings(
-    model_name="sentence-transformers/all-MiniLM-L6-v2",
-    model_kwargs={"device": "cpu"},
-    encode_kwargs={"normalize_embeddings": True}
 )
 
 vector_store = Chroma(

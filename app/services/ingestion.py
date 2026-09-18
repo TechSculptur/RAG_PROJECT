@@ -2,8 +2,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import os
-
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
@@ -33,8 +32,10 @@ splitter = RecursiveCharacterTextSplitter(
     chunk_size=1000,
     chunk_overlap=10
 )
-
-embeddings = HuggingFaceEmbeddings()
+embeddings = GoogleGenerativeAIEmbeddings(
+    model="models/gemini-embedding-001",
+    google_api_key=os.getenv("GOOGLE_API_KEY"),
+)
 
 def process_pdf(file_path: str):
     docs = load_pdf(file_path)
