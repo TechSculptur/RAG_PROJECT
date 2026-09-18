@@ -7,7 +7,7 @@ from fastapi.responses import FileResponse
 from app.services.retrieval import rag_chain
 from app.services.ingestion import process_pdf
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 app = FastAPI(title="Modular RAG API")
 @app.get("/")
 def serve_frontend():
