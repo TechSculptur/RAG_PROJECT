@@ -1,0 +1,16 @@
+# Virtual environment
+myvenv/
+
+# Environment variables / API keys
+.env
+
+# Python cache
+__pycache__/
+*.pyc
+
+# ChromaDB
+chroma_db/
+
+# Uploaded PDFs
+app/data/*
+!app/data/.gitkeep
