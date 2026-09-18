@@ -7,22 +7,21 @@ from fastapi.responses import FileResponse
 from app.services.retrieval import rag_chain
 from app.services.ingestion import process_pdf
 
-
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 app = FastAPI(title="Modular RAG API")
-
 @app.get("/")
 def serve_frontend():
-    return FileResponse("index.html")
+    return FileResponse(os.path.join(BASE_DIR, "index.html"))
 
 
 @app.get("/style.css")
 def serve_css():
-    return FileResponse("style.css")
+    return FileResponse(os.path.join(BASE_DIR, "style.css"))
 
 
 @app.get("/script.js")
 def serve_js():
-    return FileResponse("script.js")
+    return FileResponse(os.path.join(BASE_DIR, "script.js"))
 
 
 class QueryRequest(BaseModel):
