@@ -6,7 +6,7 @@ import shutil
 from fastapi.responses import FileResponse
 from app.services.retrieval import rag_chain
 from app.services.ingestion import process_pdf
-
+import traceback
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 app = FastAPI(title="Modular RAG API")
 @app.get("/")
@@ -88,10 +88,7 @@ async def upload_pdf(file: UploadFile = File(...)):
     except HTTPException:
         raise
 
-
     except Exception as e:
-
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
+        print("UPLOAD ERROR:")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
