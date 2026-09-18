@@ -51,10 +51,15 @@ prompt = ChatPromptTemplate.from_messages(
         )
     ]
 )
+embeddings = HuggingFaceEmbeddings(
+    model_name="sentence-transformers/all-MiniLM-L6-v2",
+    model_kwargs={"device": "cpu"},
+    encode_kwargs={"normalize_embeddings": True}
+)
 
 vector_store = Chroma(
     persist_directory='chroma_db',
-    embedding_function=HuggingFaceEmbeddings()
+    embedding_function=embeddings
 )
 
 retriever = vector_store.as_retriever(
