@@ -3,12 +3,26 @@ from pydantic import BaseModel
 from typing import List, Dict
 import os
 import shutil
-
+from fastapi.responses import FileResponse
 from app.services.retrieval import rag_chain
 from app.services.ingestion import process_pdf
 
 
 app = FastAPI(title="Modular RAG API")
+
+@app.get("/")
+def serve_frontend():
+    return FileResponse("index.html")
+
+
+@app.get("/style.css")
+def serve_css():
+    return FileResponse("style.css")
+
+
+@app.get("/script.js")
+def serve_js():
+    return FileResponse("script.js")
 
 
 class QueryRequest(BaseModel):
