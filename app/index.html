@@ -4,85 +4,459 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Assistant — Enterprise Knowledge Retrieval & Live RAG Analytics</title>
 
-    <title>Enterprise RAG Assistant</title>
+    <!-- Google Font: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="style.css">
+    <!-- Highlight.js for code formatting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 
-    <!-- Markdown Parser for bold text and lists -->
+    <!-- Markdown Parser -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
-    <!-- MathJax for rendering complex Neural Network formulas -->
+    <!-- MathJax for mathematical and technical formulas -->
     <script>
-        MathJax = {
+        window.MathJax = {
             tex: {
-                inlineMath: [['\\(', '\\)']],
-                displayMath: [['\\[', '\\]']]
+                inlineMath: [['\\(', '\\)'], ['$', '$']],
+                displayMath: [['\\[', '\\]'], ['$$', '$$']],
+                processEscapes: true
+            },
+            options: {
+                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
             }
         };
     </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
-    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
-    </script>
-
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
+    <div class="app-layout">
 
-    <div class="app-container">
+        <!-- Mobile Drawer Overlay -->
+        <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
-        <aside class="sidebar">
+        <!-- ================= SIDEBAR ================= -->
+        <aside class="sidebar" id="sidebar">
 
-            <h2>⚙️ Document Management</h2>
+            <!-- Sidebar Header -->
+            <div class="sidebar-header">
+                <div class="brand-group">
+                    <div class="brand-icon">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                    </div>
+                    <div class="brand-details">
+                        <span class="brand-title">Document Assistant</span>
+                        <span class="brand-subtitle">Knowledge Base & Analytics</span>
+                    </div>
+                </div>
 
-            <p>
-                Upload a PDF to add it to the knowledge base.
-            </p>
+                <button class="mobile-close-btn" id="mobile-close-btn" aria-label="Close sidebar">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
 
-            <input type="file" id="pdf-input" accept=".pdf">
+            <!-- Sidebar Content -->
+            <div class="sidebar-content">
 
-            <button id="upload-btn">
-                Upload & Process PDF
-            </button>
+                <!-- Primary View Navigation -->
+                <div class="sidebar-nav">
+                    <button class="nav-item active" id="nav-btn-chat" data-view="chat">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                        <span>Chat Assistant</span>
+                    </button>
+                    <button class="nav-item" id="nav-btn-analytics" data-view="analytics">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                        <span>RAG Analytics</span>
+                        <span class="nav-badge" id="nav-eval-badge" style="display: none;">0</span>
+                    </button>
+                </div>
 
-            <div id="ingest-status"></div>
+                <!-- Upload Section -->
+                <div class="section-box">
+                    <div class="section-header">
+                        <span class="section-title">Upload Document</span>
+                        <span class="badge">PDF</span>
+                    </div>
+
+                    <div class="drop-zone" id="drop-zone">
+                        <input type="file" id="pdf-input" accept=".pdf" class="file-input-hidden">
+                        <div class="drop-zone-inner">
+                            <svg class="drop-icon" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            <span class="drop-primary-text">Choose a PDF or drag here</span>
+                            <span class="drop-secondary-text">Supported format: .pdf</span>
+                        </div>
+                    </div>
+
+                    <!-- Selected File Info -->
+                    <div class="file-card" id="file-card" style="display: none;">
+                        <div class="file-card-details">
+                            <span class="file-card-name" id="file-card-name">filename.pdf</span>
+                            <span class="file-card-size" id="file-card-size">0 KB</span>
+                        </div>
+                        <button class="file-card-remove" id="file-card-remove" type="button" title="Remove file">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </button>
+                    </div>
+
+                    <!-- Upload Button -->
+                    <button class="btn btn-primary" id="upload-btn" disabled>
+                        <span class="btn-text">Process Document</span>
+                        <span class="btn-loader" id="upload-spinner" style="display: none;"></span>
+                    </button>
+
+                    <!-- Status Text -->
+                    <div class="status-box" id="upload-status" style="display: none;"></div>
+                </div>
+
+                <!-- Indexed Documents -->
+                <div class="section-box">
+                    <div class="section-header">
+                        <span class="section-title">Indexed Documents</span>
+                        <span class="badge" id="indexed-count-badge">0</span>
+                    </div>
+
+                    <div class="doc-list" id="doc-list">
+                        <div class="doc-list-empty" id="doc-list-empty">
+                            No documents indexed yet.
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Sidebar Footer -->
+            <div class="sidebar-footer">
+                <div class="connection-indicator" id="connection-indicator">
+                    <span class="indicator-dot" id="indicator-dot"></span>
+                    <span class="indicator-text" id="indicator-text">Connecting...</span>
+                </div>
+            </div>
 
         </aside>
 
+        <!-- ================= MAIN CONTAINER ================= -->
+        <main class="chat-main">
 
-        <main class="chat-container">
+            <!-- Chat Topbar -->
+            <header class="chat-topbar">
+                <div class="topbar-left">
+                    <button class="mobile-toggle-btn" id="mobile-toggle-btn" aria-label="Toggle navigation">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                    </button>
+                    <div class="view-tabs">
+                        <button class="view-tab active" id="view-tab-chat" data-view="chat">
+                            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                            <span>Chat</span>
+                        </button>
+                        <button class="view-tab" id="view-tab-analytics" data-view="analytics">
+                            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                            <span>RAG Analytics</span>
+                            <span class="tab-pulse-indicator" id="analytics-pulse-dot" style="display: none;"></span>
+                        </button>
+                    </div>
+                </div>
 
-            <header class="chat-header">
-
-                <h1>📚 Enterprise Document Assistant</h1>
-
-                <p>
-                    Ask questions about your uploaded PDFs
-                </p>
-
+                <div class="topbar-actions">
+                    <span class="topbar-status" id="topbar-status">Ready</span>
+                    <button class="btn btn-secondary btn-sm" id="clear-chat-btn" title="Clear chat history">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        <span>Clear Chat</span>
+                    </button>
+                </div>
             </header>
 
+            <!-- ================= VIEW 1: CHAT INTERFACE ================= -->
+            <div class="view-container active" id="view-chat">
 
-            <div class="chat-box" id="chat-box"></div>
+                <!-- Chat Message Feed -->
+                <div class="chat-feed" id="chat-feed">
 
+                    <!-- Simple Clean Hero State -->
+                    <div class="empty-state" id="empty-state">
+                        <div class="empty-icon">
+                            <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                        </div>
 
-            <div class="input-area">
+                        <h2 class="empty-title">Ask questions about your documents</h2>
+                        <p class="empty-subtitle">
+                            Upload a PDF document from the sidebar to extract insights, summarize sections, or clarify specific details. Each query is automatically evaluated for Faithfulness, Context Relevance, and Answer Relevance.
+                        </p>
 
-                <input type="text" id="user-input" placeholder="ask anything about your pdf..." autocomplete="off">
+                        <div class="suggested-prompts">
+                            <button class="prompt-btn" data-prompt="Provide a clear summary of the core points and findings in this document.">
+                                Summarize core findings and key points
+                            </button>
+                            <button class="prompt-btn" data-prompt="What are the main methodologies, processes, or steps described?">
+                                Explain the main methodologies and steps
+                            </button>
+                            <button class="prompt-btn" data-prompt="Extract the key metrics, quantitative data, and results presented.">
+                                Extract quantitative metrics and results
+                            </button>
+                        </div>
+                    </div>
 
-                <button id="send-btn">
-                    Send
-                </button>
+                </div>
 
+                <!-- Chat Input Bar -->
+                <div class="chat-input-wrapper">
+                    <div class="chat-input-bar">
+                        <button class="input-attach-btn" id="attach-btn" title="Select PDF document">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+                        </button>
+
+                        <textarea 
+                            id="user-input" 
+                            class="chat-textarea" 
+                            placeholder="Ask a question about your document... (Enter to send, Shift+Enter for new line)" 
+                            rows="1"
+                            autocomplete="off"
+                        ></textarea>
+
+                        <button class="btn btn-send" id="send-btn" disabled title="Send question">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="22" y1="2" x2="11" y2="13"></line>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="input-helper">
+                        Responses are generated strictly using the context from your uploaded PDF documents and evaluated live.
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ================= VIEW 2: RAG ANALYTICS DASHBOARD ================= -->
+            <div class="view-container" id="view-analytics" style="display: none;">
+                <div class="analytics-scrollable">
+
+                    <!-- Dashboard Header & Filtering Controls -->
+                    <div class="analytics-header">
+                        <div class="analytics-title-block">
+                            <h2 class="analytics-main-title">Live RAG Evaluation & Analytics</h2>
+                            <p class="analytics-subtitle">
+                                Reference-free model-based empirical evaluation measuring factual groundedness, context quality, and answer directness.
+                            </p>
+                        </div>
+
+                        <div class="analytics-controls">
+                            <!-- Document Filter -->
+                            <div class="control-group">
+                                <label for="analytics-doc-filter">Document Scope:</label>
+                                <select id="analytics-doc-filter" class="form-select">
+                                    <option value="all">All Documents</option>
+                                </select>
+                            </div>
+
+                            <button class="btn btn-secondary btn-sm" id="analytics-refresh-btn" title="Refresh metrics">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                                <span>Refresh</span>
+                            </button>
+
+                            <button class="btn btn-secondary btn-sm btn-danger-subtle" id="analytics-clear-btn" title="Clear evaluation history">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                <span>Clear History</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Summary Stats Bar -->
+                    <div class="stats-overview-grid">
+                        <div class="stat-pill-card">
+                            <span class="stat-pill-label">Total Questions</span>
+                            <span class="stat-pill-value" id="stat-total-questions">0</span>
+                        </div>
+                        <div class="stat-pill-card">
+                            <span class="stat-pill-label">Evaluated Questions</span>
+                            <span class="stat-pill-value" id="stat-evaluated-questions">0</span>
+                        </div>
+                        <div class="stat-pill-card">
+                            <span class="stat-pill-label">Pending Evaluation</span>
+                            <span class="stat-pill-value" id="stat-pending-questions">0</span>
+                        </div>
+                        <div class="stat-pill-card">
+                            <span class="stat-pill-label">Failed / Unavailable</span>
+                            <span class="stat-pill-value" id="stat-failed-questions">0</span>
+                        </div>
+                        <div class="stat-pill-card">
+                            <span class="stat-pill-label">Avg Total Latency</span>
+                            <span class="stat-pill-value" id="stat-avg-latency">—</span>
+                        </div>
+                    </div>
+
+                    <!-- Composite Overall Average Card -->
+                    <div class="overall-composite-card">
+                        <div class="composite-info">
+                            <div class="composite-tag">
+                                <span class="composite-dot"></span>
+                                <span>Overall Benchmark</span>
+                            </div>
+                            <h3 class="composite-title">Average Score of All Three Metrics</h3>
+                            <p class="composite-desc">
+                                Combined empirical benchmark averaging Faithfulness, Context Relevance, and Answer Relevance across successfully evaluated questions.
+                            </p>
+                        </div>
+                        <div class="composite-metric-side">
+                            <div class="composite-score-wrap">
+                                <span class="composite-score-val" id="metric-overall-score-value">No evaluations yet</span>
+                                <span class="composite-eval-count" id="metric-overall-score-count">0 questions evaluated</span>
+                            </div>
+                            <div class="composite-bar-wrap">
+                                <div class="composite-progress-bar" id="metric-overall-score-bar" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Three Primary Metric Cards -->
+                    <div class="metric-cards-grid">
+
+                        <!-- Card 1: Average Faithfulness -->
+                        <div class="metric-card">
+                            <div class="metric-card-header">
+                                <div class="metric-name-wrap">
+                                    <span class="metric-icon-box metric-icon-faithfulness">
+                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                                    </span>
+                                    <span class="metric-title">Average Faithfulness</span>
+                                </div>
+                                <span class="metric-count-badge" id="metric-faithfulness-count">0 evaluated</span>
+                            </div>
+
+                            <div class="metric-score-display">
+                                <span class="metric-score-value" id="metric-faithfulness-value">No evaluations yet</span>
+                            </div>
+
+                            <div class="metric-progress-container">
+                                <div class="metric-progress-bar" id="metric-faithfulness-bar" style="width: 0%;"></div>
+                            </div>
+
+                            <p class="metric-description">
+                                Measures whether all claims in the generated answer are strictly supported by the retrieved document context. Identifies hallucinations.
+                            </p>
+                        </div>
+
+                        <!-- Card 2: Average Context Relevance -->
+                        <div class="metric-card">
+                            <div class="metric-card-header">
+                                <div class="metric-name-wrap">
+                                    <span class="metric-icon-box metric-icon-context">
+                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                                    </span>
+                                    <span class="metric-title">Average Context Relevance</span>
+                                </div>
+                                <span class="metric-count-badge" id="metric-context-relevance-count">0 evaluated</span>
+                            </div>
+
+                            <div class="metric-score-display">
+                                <span class="metric-score-value" id="metric-context-relevance-value">No evaluations yet</span>
+                            </div>
+
+                            <div class="metric-progress-container">
+                                <div class="metric-progress-bar" id="metric-context-relevance-bar" style="width: 0%;"></div>
+                            </div>
+
+                            <p class="metric-description">
+                                Measures how focused and pertinent the retrieved document chunks are to the question. Penalizes extraneous, irrelevant text noise.
+                            </p>
+                        </div>
+
+                        <!-- Card 3: Average Answer Relevance -->
+                        <div class="metric-card">
+                            <div class="metric-card-header">
+                                <div class="metric-name-wrap">
+                                    <span class="metric-icon-box metric-icon-answer">
+                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                                    </span>
+                                    <span class="metric-title">Average Answer Relevance</span>
+                                </div>
+                                <span class="metric-count-badge" id="metric-answer-relevance-count">0 evaluated</span>
+                            </div>
+
+                            <div class="metric-score-display">
+                                <span class="metric-score-value" id="metric-answer-relevance-value">No evaluations yet</span>
+                            </div>
+
+                            <div class="metric-progress-container">
+                                <div class="metric-progress-bar" id="metric-answer-relevance-bar" style="width: 0%;"></div>
+                            </div>
+
+                            <p class="metric-description">
+                                Measures whether the generated answer directly, clearly, and completely addresses what was asked without being evasive or off-topic.
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <!-- Latency Breakdown Row -->
+                    <div class="latency-card">
+                        <div class="latency-header">
+                            <span class="latency-title">Pipeline Latency Breakdown</span>
+                            <span class="latency-sub">Average response times across retrieval and LLM synthesis</span>
+                        </div>
+                        <div class="latency-metrics-row">
+                            <div class="latency-item">
+                                <span class="latency-label">Vector Retrieval (MMR)</span>
+                                <span class="latency-val" id="stat-retrieval-latency">—</span>
+                            </div>
+                            <div class="latency-item">
+                                <span class="latency-label">Answer Synthesis (Groq LLM)</span>
+                                <span class="latency-val" id="stat-generation-latency">—</span>
+                            </div>
+                            <div class="latency-item">
+                                <span class="latency-label">End-to-End Response Time</span>
+                                <span class="latency-val" id="stat-total-latency">—</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Individual Question Evaluation History -->
+                    <div class="history-section">
+                        <div class="history-header">
+                            <div class="history-title-group">
+                                <h3 class="history-title">Question Evaluation History</h3>
+                                <span class="history-subtitle">Inspect individual interaction traces, retrieved chunks, and metric explanations</span>
+                            </div>
+                        </div>
+
+                        <div class="history-list" id="eval-history-list">
+                            <!-- Populated dynamically -->
+                            <div class="history-empty" id="eval-history-empty">
+                                <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                                <span>No evaluations recorded yet. Ask a question in the Chat view to generate your first live evaluation trace.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
             </div>
 
         </main>
 
     </div>
 
+    <!-- Notification Toast -->
+    <div class="toast-shelf" id="toast-shelf"></div>
 
     <script src="script.js"></script>
-
 </body>
 
 </html>
