@@ -16,7 +16,7 @@ langchain-text-splitters
 chromadb
 
 # RAG Evaluation
-ragas
+ragas==0.2.15
 
 # Document Processing & Utilities
 pypdf==4.3.1
