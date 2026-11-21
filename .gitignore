@@ -1,16 +1,24 @@
-# Virtual environment
+
+# Virtual environments
 myvenv/
+venv/
+.venv/
 
 # Environment variables / API keys
 .env
+.env.*
 
 # Python cache
 __pycache__/
-*.pyc
+*.py[cod]
 
 # ChromaDB
 chroma_db/
 
-# Uploaded PDFs
+# Uploaded PDFs and generated data
 app/data/*
 !app/data/.gitkeep
+
+# SQLite databases
+*.db
+*.sqlite3

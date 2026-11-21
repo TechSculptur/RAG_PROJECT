@@ -93,6 +93,45 @@ data_prep = (
 
 rag_chain = data_prep | prompt | llm | StrOutputParser()
 
+def reset_chroma_store():
+    """
+    Clears all document embeddings from the ChromaDB collection while preserving
+    the collection, vector_store, and retriever for future queries and uploads.
+    """
+    global vector_store, retriever, data_prep, rag_chain
+    try:
+        col = vector_store._collection
+        records = col.get()
+        if records and records.get("ids"):
+            col.delete(ids=records["ids"])
+            logger.info(f"Cleared {len(records['ids'])} embeddings from ChromaDB collection.")
+    except Exception as e:
+        logger.warning(f"Error clearing items from Chroma collection ({e}). Rebuilding collection...")
+        try:
+            vector_store.delete_collection()
+        except Exception:
+            pass
+        vector_store = Chroma(
+            persist_directory='chroma_db',
+            embedding_function=embeddings
+        )
+        retriever = vector_store.as_retriever(
+            search_type='mmr',
+            search_kwargs={
+                "k": 4,
+                "fetch_k": 10,
+                "lambda_mult": 0.5
+            }
+        )
+        data_prep = (
+            RunnablePassthrough.assign(
+                question=cont_chain 
+            ).assign(
+                context=RunnableLambda(lambda x: x['question']) | retriever | RunnableLambda(format_docs) 
+            )
+        )
+        rag_chain = data_prep | prompt | llm | StrOutputParser()
+
 def execute_rag_pipeline(question: str, chat_history: list = None) -> dict:
     """
     Executes the full RAG pipeline while preserving detailed evaluation data:

@@ -385,6 +385,23 @@ html, body {
     border-color: var(--border-hover);
 }
 
+.btn-danger {
+    background-color: var(--error);
+    color: #ffffff;
+    border-color: #dc2626;
+}
+
+.btn-danger:hover:not(:disabled) {
+    background-color: #dc2626;
+    border-color: #b91c1c;
+    color: #ffffff;
+}
+
+.btn-danger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 .btn-danger-subtle {
     color: #f87171;
 }

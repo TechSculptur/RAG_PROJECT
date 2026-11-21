@@ -6,7 +6,7 @@ import shutil
 import uuid
 import traceback
 from fastapi.responses import FileResponse
-from app.services.retrieval import execute_rag_pipeline, rag_chain
+from app.services.retrieval import execute_rag_pipeline, rag_chain, reset_chroma_store
 from app.services.ingestion import (
     process_pdf,
     GeminiDailyQuotaExhaustedError,
@@ -294,3 +294,44 @@ def clear_evaluation_history(
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/reset")
+def reset_application_data():
+    """
+    Completely resets stored application data:
+    1. Deletes all previously uploaded PDF files from app/data/.
+    2. Clears all document embeddings from the ChromaDB collection.
+    3. Clears all evaluation and analytics records from SQLite while preserving table schema.
+    """
+    try:
+        # 1. Delete all previously uploaded PDF files from app/data
+        data_dir = os.path.join(BASE_DIR, "data")
+        deleted_files = []
+        if os.path.exists(data_dir):
+            for filename in os.listdir(data_dir):
+                if filename.lower().endswith(".pdf"):
+                    fpath = os.path.join(data_dir, filename)
+                    if os.path.isfile(fpath):
+                        os.remove(fpath)
+                        deleted_files.append(filename)
+
+        # 2. Clear all document embeddings from ChromaDB
+        reset_chroma_store()
+
+        # 3. Clear all evaluation and analytics records from SQLite
+        eval_store.clear_evaluations()
+
+        return {
+            "status": "success",
+            "message": "Application data reset successfully.",
+            "deleted_files": deleted_files,
+            "cleared_embeddings": True,
+            "cleared_evaluations": True
+        }
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Reset operation failed: {str(e)}"
+        )

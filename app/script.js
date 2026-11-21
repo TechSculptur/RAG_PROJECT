@@ -64,6 +64,7 @@
     const userInput = document.getElementById("user-input");
     const sendBtn = document.getElementById("send-btn");
     const clearChatBtn = document.getElementById("clear-chat-btn");
+    const resetAppBtn = document.getElementById("reset-app-btn");
 
     // Indicator & Toast
     const indicatorDot = document.getElementById("indicator-dot");
@@ -783,6 +784,74 @@
         showToast("Chat cleared.");
     });
 
+    // Reset Application Data
+    if (resetAppBtn) {
+        resetAppBtn.addEventListener("click", async () => {
+            const confirmed = confirm(
+                "WARNING: This action will permanently delete:\n" +
+                "• All previously uploaded PDF documents\n" +
+                "• All document embeddings in ChromaDB\n" +
+                "• All evaluation and analytics records in SQLite\n\n" +
+                "Are you sure you want to completely reset the application?"
+            );
+            if (!confirmed) return;
+
+            const originalHtml = resetAppBtn.innerHTML;
+            resetAppBtn.disabled = true;
+            resetAppBtn.innerHTML = `
+                <span class="spinner" style="width: 12px; height: 12px; border-width: 2px;"></span>
+                <span>Resetting...</span>
+            `;
+
+            try {
+                const res = await fetch(`${API_BASE}/api/reset`, {
+                    method: "POST"
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(data.detail || `Server returned HTTP ${res.status}`);
+                }
+
+                // 1. Reset frontend storage and document state
+                localStorage.removeItem("doc_assistant_files");
+                activeDocumentName = null;
+                renderDocList();
+                resetFileSelection();
+
+                // 2. Reset chat feed and state
+                chatHistory = [];
+                chatFeed.innerHTML = "";
+                if (emptyState) {
+                    emptyState.style.display = "flex";
+                    chatFeed.appendChild(emptyState);
+                }
+                userInput.value = "";
+                resizeInput();
+
+                // 3. Clear active polls and badges
+                activePolls.clear();
+                if (navEvalBadge) navEvalBadge.style.display = "none";
+                if (analyticsPulseDot) analyticsPulseDot.style.display = "none";
+
+                // 4. Refresh analytics dashboard & summary
+                await Promise.all([
+                    fetchAnalyticsSummary(),
+                    loadAnalyticsDashboard()
+                ]);
+
+                showToast("Application data reset successfully.");
+            } catch (err) {
+                console.error("Reset error:", err);
+                showToast(err.message || "Failed to reset application data.", true);
+            } finally {
+                resetAppBtn.disabled = false;
+                resetAppBtn.innerHTML = originalHtml;
+            }
+        });
+    }
+
     // Mobile Drawer
     function toggleDrawer(open) {
         sidebar.classList.toggle("open", open);
@@ -827,6 +896,9 @@
                 if (existingVal && data.documents.includes(existingVal)) {
                     analyticsDocFilter.value = existingVal;
                 }
+            } else {
+                analyticsDocFilter.innerHTML = '<option value="all">All Documents</option>';
+                analyticsDocFilter.value = "all";
             }
 
             // Overview Counts
